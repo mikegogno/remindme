@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getReminders, createReminder, updateReminder, deleteReminder } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
-import BirthdayPicker from '../BirthdayPicker';
+import ImprovedDateTimePicker from '../ImprovedDateTimePicker';
+import AddressPicker from '../AddressPicker';
+import MapAppSelector from '../MapAppSelector';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -10,8 +12,11 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [newReminder, setNewReminder] = useState('');
   const [reminderDate, setReminderDate] = useState('');
+  const [reminderAddress, setReminderAddress] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
+  const [showMapSelector, setShowMapSelector] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -57,6 +62,7 @@ const Dashboard = () => {
         title: newReminder.trim(),
         remind_at: new Date(reminderDate).toISOString(),
         completed: false,
+        address: reminderAddress ? JSON.stringify(reminderAddress) : null,
         created_at: new Date().toISOString()
       };
 
@@ -70,6 +76,7 @@ const Dashboard = () => {
         setReminders([data, ...reminders]);
         setNewReminder('');
         setReminderDate('');
+        setReminderAddress(null);
       }
     } catch (error) {
       toast.error('An unexpected error occurred');
@@ -145,7 +152,7 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               {/* View Switcher */}
-              <div className="bg-gray-100 p-1 rounded-lg flex">
+              <div className="bg-gray-200 p-1 rounded-lg flex">
                 <button
                   onClick={() => setViewMode('list')}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -169,8 +176,8 @@ const Dashboard = () => {
               </div>
               
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Your Reminders</h1>
-                <p className="text-sm text-gray-500">Welcome back, {user?.email}</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-[#5046E4] to-[#7C3AED] bg-clip-text text-transparent">Your Reminders</h1>
+                <p className="text-sm text-gray-500">Welcome back, {user?.user_metadata?.first_name || user?.email}</p>
               </div>
               {/* Profile Icon */}
               <button
@@ -265,16 +272,21 @@ const Dashboard = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:border-[#5046E4]"
                 />
               </div>
-              <BirthdayPicker
+              <ImprovedDateTimePicker
                 value={reminderDate}
                 onChange={setReminderDate}
                 label="When should we remind you?"
+              />
+              <AddressPicker
+                value={reminderAddress?.formatted_address || ''}
+                onChange={setReminderAddress}
+                label="Location (Optional)"
               />
               <button
                 type="submit"
                 className="w-full bg-[#5046E4] hover:bg-[#4036D4] text-white font-bold py-3 px-4 rounded-lg transition-colors"
               >
-                Create Reminder
+                + New Reminder
               </button>
             </form>
           </div>
@@ -319,6 +331,34 @@ const Dashboard = () => {
                           <p className="text-sm text-gray-500 mt-1">
                             {new Date(reminder.remind_at).toLocaleString()}
                           </p>
+                          {reminder.address && (
+                            <button
+                              onClick={() => {
+                                try {
+                                  const addressData = JSON.parse(reminder.address);
+                                  setSelectedAddress(addressData.formatted_address || addressData.name || reminder.address);
+                                  setShowMapSelector(true);
+                                } catch {
+                                  setSelectedAddress(reminder.address);
+                                  setShowMapSelector(true);
+                                }
+                              }}
+                              className="text-sm text-[#5046E4] hover:text-[#4036D4] flex items-center mt-1"
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              {(() => {
+                                try {
+                                  const addressData = JSON.parse(reminder.address);
+                                  return addressData.name || addressData.formatted_address || 'View Location';
+                                } catch {
+                                  return reminder.address || 'View Location';
+                                }
+                              })()}
+                            </button>
+                          )}
                         </div>
                         <div className="flex space-x-2">
                           {!reminder.completed && (
@@ -345,6 +385,17 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* Map App Selector Modal */}
+      {showMapSelector && selectedAddress && (
+        <MapAppSelector
+          address={selectedAddress}
+          onClose={() => setShowMapSelector(false)}
+          onSelect={(app) => {
+            console.log(`Selected ${app.name} for address: ${selectedAddress}`);
+          }}
+        />
+      )}
     </div>
   );
 };
