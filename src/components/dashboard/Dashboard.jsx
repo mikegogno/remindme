@@ -248,7 +248,7 @@ const Dashboard = () => {
               </div>
               <button
                 type="submit"
-                className="w-full bg-[#5046E4] hover:bg-[#4036D4] text-white font-bold py-2 px-4 rounded"
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg border border-gray-200"
               >
                 Add Reminder
               </button>
