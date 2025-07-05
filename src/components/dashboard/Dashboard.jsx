@@ -240,7 +240,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <input
-                  type="datetime-local"
+                  type="text" placeholder="Select date and time"
                   value={reminderDate}
                   onChange={(e) => setReminderDate(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:border-[#5046E4]"
