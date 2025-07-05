@@ -3,11 +3,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import { signUp } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import LocationPicker from '../../components/LocationPicker';
 
 const RegisterPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    homeAddress: null,
+    workAddress: null
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -19,20 +28,24 @@ const RegisterPage = () => {
     }
   }, [user, navigate]);
 
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!email || !password || !confirmPassword) {
-      toast.error('Please fill in all fields');
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
 
-    if (password.length < 6) {
+    if (formData.password.length < 6) {
       toast.error('Password must be at least 6 characters');
       return;
     }
@@ -40,11 +53,12 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await signUp(email, password);
+      const { data, error } = await signUp(formData.email, formData.password);
 
       if (error) {
         toast.error(error.message);
       } else {
+        // TODO: Save additional profile data (name, addresses) to user profile
         toast.success('Account created successfully! Please check your email to verify your account.');
         navigate('/auth/login');
       }
@@ -64,75 +78,141 @@ const RegisterPage = () => {
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Join RemindMe to start organizing your tasks
+            Join RemindMe to start organizing your tasks with smart location features
           </p>
         </div>
+        
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
+          <div className="space-y-4">
+            {/* Name */}
             <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name *
               </label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  placeholder="Enter your full name"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5046E4] focus:border-transparent"
+                  required
+                />
+              </div>
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirm-password" className="sr-only">
-                Confirm Password
-              </label>
-              <input
-                id="confirm-password"
-                name="confirm-password"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </div>
-          </div>
 
-          <div>
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address *
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  placeholder="Enter your email address"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5046E4] focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  placeholder="Create a password"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5046E4] focus:border-transparent"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                  placeholder="Confirm your password"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5046E4] focus:border-transparent"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Optional Location Setup */}
+            <div className="space-y-4 pt-4 border-t border-gray-200">
+              <div className="text-center">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Set up your locations (optional)
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Add your frequently visited places for smarter, location-based reminders
+                </p>
+              </div>
+              
+              <LocationPicker
+                value={formData.homeAddress}
+                onChange={(location) => handleChange('homeAddress', location)}
+                placeholder="Add your home address"
+                label="Home Address"
+                showCurrentLocation={true}
+                size="sm"
+              />
+              
+              <LocationPicker
+                value={formData.workAddress}
+                onChange={(location) => handleChange('workAddress', location)}
+                placeholder="Add your work address"
+                label="Work Address"
+                showCurrentLocation={true}
+                size="sm"
+              />
+            </div>
+
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#5046E4] hover:bg-[#4036D4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 bg-[#5046E4] text-white rounded-lg font-semibold hover:bg-[#4338CA] focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </div>
 
           <div className="text-center">
             <Link
               to="/auth/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
+              className="font-medium text-[#5046E4] hover:text-[#4338CA] transition-colors duration-200"
             >
               Already have an account? Sign in
             </Link>
