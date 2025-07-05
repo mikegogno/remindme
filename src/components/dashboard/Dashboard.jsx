@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getReminders, createReminder, updateReminder, deleteReminder } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
+import BirthdayPicker from '../BirthdayPicker';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -10,6 +11,7 @@ const Dashboard = () => {
   const [newReminder, setNewReminder] = useState('');
   const [reminderDate, setReminderDate] = useState('');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
 
   useEffect(() => {
     if (user) {
@@ -120,10 +122,8 @@ const Dashboard = () => {
     if (action === 'logout') {
       logout();
     } else if (action === 'profile') {
-      // Navigate to profile page - you can implement routing here
       toast.info('Profile page - coming soon!');
     } else if (action === 'settings') {
-      // Navigate to settings page - you can implement routing here
       toast.info('Settings page - coming soon!');
     }
   };
@@ -144,8 +144,32 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {/* View Switcher */}
+              <div className="bg-gray-100 p-1 rounded-lg flex">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'list'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  📋 List View
+                </button>
+                <button
+                  onClick={() => setViewMode('calendar')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'calendar'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  📅 Calendar View
+                </button>
+              </div>
+              
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+                <h1 className="text-xl font-bold text-gray-900">Your Reminders</h1>
                 <p className="text-sm text-gray-500">Welcome back, {user?.email}</p>
               </div>
               {/* Profile Icon */}
@@ -227,30 +251,30 @@ const Dashboard = () => {
         <div className="px-4 py-6 sm:px-0">
           {/* Add Reminder Form */}
           <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Add New Reminder</h2>
-            <form onSubmit={handleAddReminder} className="space-y-4">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">+ New Reminder</h2>
+            <form onSubmit={handleAddReminder} className="space-y-6">
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  What do you want to be reminded about?
+                </label>
                 <input
                   type="text"
-                  placeholder="What do you want to be reminded about?"
+                  placeholder="Enter your reminder..."
                   value={newReminder}
                   onChange={(e) => setNewReminder(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:border-[#5046E4]"
                 />
               </div>
-              <div>
-                <input
-                  type="text" placeholder="Select date and time"
-                  value={reminderDate}
-                  onChange={(e) => setReminderDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:border-[#5046E4]"
-                />
-              </div>
+              <BirthdayPicker
+                value={reminderDate}
+                onChange={setReminderDate}
+                label="When should we remind you?"
+              />
               <button
                 type="submit"
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg border border-gray-200"
+                className="w-full bg-[#5046E4] hover:bg-[#4036D4] text-white font-bold py-3 px-4 rounded-lg transition-colors"
               >
-                Add Reminder
+                Create Reminder
               </button>
             </form>
           </div>
@@ -268,7 +292,13 @@ const Dashboard = () => {
                 </div>
               ) : reminders.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No reminders yet. Add your first reminder above!</p>
+                  <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No reminders yet</h3>
+                  <p className="text-gray-500">Create your first reminder to get started!</p>
                 </div>
               ) : (
                 <div className="space-y-4">
