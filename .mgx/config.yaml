@@ -1,0 +1,10 @@
+name: task-reminder
+type: static
+version: 1.0.0
+description: Task Reminder Static Deploy
+subdomain: task-reminder
+build:
+  output: dist
+  command: npm run build
+runtime:
+  serve_static: true
