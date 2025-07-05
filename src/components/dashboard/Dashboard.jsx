@@ -146,7 +146,7 @@ const Dashboard = () => {
                   placeholder="What do you want to be reminded about?"
                   value={newReminder}
                   onChange={(e) => setNewReminder(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:border-[#5046E4]"
                 />
               </div>
               <div>
@@ -154,12 +154,12 @@ const Dashboard = () => {
                   type="datetime-local"
                   value={reminderDate}
                   onChange={(e) => setReminderDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:border-[#5046E4]"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+                className="w-full bg-[#5046E4] hover:bg-[#4036D4] text-white font-bold py-2 px-4 rounded"
               >
                 Add Reminder
               </button>
