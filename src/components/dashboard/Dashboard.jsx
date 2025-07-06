@@ -194,7 +194,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {/* View Switcher - Simple Text Design */}
+              {/* View Switcher - Simple Text Design as requested */}
               <div className="flex items-center space-x-12">
                 <button
                   onClick={() => setViewMode('list')}
@@ -204,9 +204,6 @@ const Dashboard = () => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  <svg className={`w-6 h-6 ${viewMode === 'list' ? 'text-[#5046E4]' : 'text-gray-500'}`} fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                  </svg>
                   <span>List View</span>
                   {viewMode === 'list' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5046E4]"></div>
@@ -220,9 +217,6 @@ const Dashboard = () => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  <svg className={`w-6 h-6 ${viewMode === 'calendar' ? 'text-[#5046E4]' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
                   <span>Calendar View</span>
                   {viewMode === 'calendar' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5046E4]"></div>
