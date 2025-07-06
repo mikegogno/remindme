@@ -13,6 +13,9 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Enter address..."
   const placesService = useRef(null);
   const timeoutRef = useRef(null);
 
+  // Google Maps API Key
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyB0Sdpa278GhhxAppSHlzTGaho1y3zplRg';
+
   // Initialize Google Places services
   useEffect(() => {
     let retryCount = 0;
@@ -192,23 +195,76 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Enter address..."
   };
 
   return (
-    <div>
+    <div className="relative">
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </label>
       <input
         ref={inputRef}
         type="text"
-        value={typeof value === 'string' ? value : value?.address || ''}
+        value={inputValue}
         onChange={handleInputChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         placeholder={placeholder}
         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:border-[#5046E4]"
       />
-      {!isLoaded && (
-        <p className="text-xs text-gray-500 mt-1">Loading address suggestions...</p>
+      {/* Dropdown */}
+      {isOpen && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+          {isLoading && (
+            <div className="flex items-center justify-center py-2">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <span className="text-sm text-gray-500">Searching...</span>
+            </div>
+          )}
+          
+          {error && (
+            <div className="px-3 py-2 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+          
+          {!isLoading && !error && predictions.length === 0 && inputValue.length >= 3 && (
+            <div className="px-3 py-2 text-sm text-gray-500">
+              No addresses found
+            </div>
+          )}
+          
+          {!isLoading && predictions.length > 0 && (
+            <ul>
+              {predictions.map((prediction) => (
+                <li
+                  key={prediction.place_id}
+                  className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center"
+                  onClick={() => handlePredictionSelect(prediction)}
+                >
+                  <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">
+                      {prediction.structured_formatting?.main_text || prediction.description}
+                    </div>
+                    {prediction.structured_formatting?.secondary_text && (
+                      <div className="text-xs text-gray-500">
+                        {prediction.structured_formatting.secondary_text}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
-      {isLoaded && !window.google && (
-        <p className="text-xs text-gray-500 mt-1">Manual address entry (Google Maps API not configured)</p>
+      
+      {value && (
+        <button
+          type="button"
+          onClick={clearSelection}
+          className="absolute right-2 top-9 p-1 text-gray-400 hover:text-gray-600"
+        >
+          <X className="w-4 h-4" />
+        </button>
       )}
     </div>
   );
