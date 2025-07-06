@@ -16,10 +16,16 @@ const Dashboard = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     if (user) {
       loadReminders();
+    }
+    // Load user profile
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      setUserProfile(JSON.parse(savedProfile));
     }
   }, [user]);
 
@@ -160,33 +166,45 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {/* View Switcher - Updated to match reference design */}
-              <div className="flex items-center space-x-6">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium transition-colors ${
-                    viewMode === 'list'
-                      ? 'text-[#5046E4] border-b-2 border-[#5046E4]'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+              {/* View Switcher - Pill Button Design */}
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`flex items-center space-x-2 px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+                      viewMode === 'list'
+                        ? 'bg-[#5046E4] text-white shadow-lg'
+                        : 'bg-white text-[#5046E4] border-2 border-[#5046E4] hover:bg-[#5046E4] hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span>List View</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('calendar')}
+                    className={`flex items-center space-x-2 px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+                      viewMode === 'calendar'
+                        ? 'bg-[#5046E4] text-white shadow-lg'
+                        : 'bg-white text-[#5046E4] border-2 border-[#5046E4] hover:bg-[#5046E4] hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Calendar View</span>
+                  </button>
+                </div>
+                
+                <button 
+                  onClick={() => document.querySelector('input[placeholder="Enter your reminder..."]').focus()}
+                  className="flex items-center space-x-2 bg-[#5046E4] text-white px-6 py-3 rounded-full font-medium hover:bg-[#4338CA] transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  <span>List View</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('calendar')}
-                  className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium transition-colors ${
-                    viewMode === 'calendar'
-                      ? 'text-[#5046E4] border-b-2 border-[#5046E4]'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>Calendar View</span>
+                  <span>New Reminder</span>
                 </button>
               </div>
               
@@ -194,14 +212,24 @@ const Dashboard = () => {
                 <h1 className="text-xl font-bold text-gray-900">Your Reminders</h1>
                 <p className="text-sm text-gray-500">Welcome back, {user?.email}</p>
               </div>
-              {/* Profile Icon */}
+              {/* Profile Menu Icon */}
               <button
                 onClick={() => setIsDrawerOpen(true)}
-                className="bg-[#5046E4] hover:bg-[#4036D4] text-white rounded-full p-2 transition-colors"
+                className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#5046E4] hover:border-[#4338CA] transition-colors focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:ring-offset-2"
               >
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
-                </svg>
+                {userProfile?.profileImage ? (
+                  <img
+                    src={userProfile.profileImage}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#5046E4] flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
+                )}
               </button>
             </div>
           </div>
