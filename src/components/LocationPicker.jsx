@@ -112,21 +112,27 @@ const LocationPicker = ({
     });
   };
 
-  // Handle input change with debouncing
+  // Handle input change with debouncing and 3-character minimum
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     setInputValue(newValue);
-    setIsOpen(true);
-
+    
     // Clear existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Set new timeout for debounced search
-    timeoutRef.current = setTimeout(() => {
-      performSearch(newValue);
-    }, 300);
+    // Only show dropdown and search if we have 3+ characters
+    if (newValue.length >= 3) {
+      setIsOpen(true);
+      // Set new timeout for debounced search
+      timeoutRef.current = setTimeout(() => {
+        performSearch(newValue);
+      }, 300);
+    } else {
+      setIsOpen(false);
+      setPredictions([]);
+    }
   };
 
   // Get place details
@@ -245,11 +251,13 @@ const LocationPicker = ({
     inputRef.current?.focus();
   };
 
-  // Handle input focus
+  // Handle input focus - only show dropdown if 3+ characters
   const handleFocus = () => {
-    setIsOpen(true);
-    if (inputValue && predictions.length === 0) {
-      performSearch(inputValue);
+    if (inputValue.length >= 3) {
+      setIsOpen(true);
+      if (predictions.length === 0) {
+        performSearch(inputValue);
+      }
     }
   };
 

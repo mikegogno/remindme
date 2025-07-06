@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import Dashboard from './components/dashboard/Dashboard';
+import TestPage from './pages/TestPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route path="/test" element={<TestPage />} />
             
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/auth/login" replace />} />
