@@ -11,7 +11,7 @@ const AddressAutocomplete = ({ value, onChange, placeholder = "Enter address..."
         // Load Google Maps API dynamically
         if (!window.google) {
           const script = document.createElement('script');
-          script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDummy_API_Key_Replace_With_Real_One&libraries=places`;
+          script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB0Sdpa278GhhxAppSHlzTGaho1y3zplRg&libraries=places`;
           script.async = true;
           script.defer = true;
           
