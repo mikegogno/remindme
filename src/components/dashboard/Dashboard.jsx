@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { format, startOfDay, endOfDay, isSameDay, parseISO, addDays, isBefore, isAfter } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
-import { getReminders, createReminder, updateReminder, deleteReminder } from '../../lib/supabaseClient';
+import { getReminders, createReminder, updateReminder, deleteReminder } from '../../lib/storageAdapter';
 import toast from 'react-hot-toast';
 import BirthdayPicker from '../BirthdayPicker';
 import AddressAutocomplete from '../AddressAutocomplete';
 import MapAppSelector from '../MapAppSelector';
+import CalendarView from './CalendarView';
+import FilterTabs from './FilterTabs';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [reminders, setReminders] = useState([]);
+  const [filteredReminders, setFilteredReminders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newReminder, setNewReminder] = useState('');
   const [reminderDate, setReminderDate] = useState('');
@@ -17,6 +21,7 @@ const Dashboard = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
   const [userProfile, setUserProfile] = useState(null);
+  const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
     if (user) {
@@ -28,6 +33,45 @@ const Dashboard = () => {
       setUserProfile(JSON.parse(savedProfile));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (reminders.length > 0) {
+      filterReminders();
+    } else {
+      setFilteredReminders([]);
+    }
+  }, [activeFilter, reminders]);
+
+  const filterReminders = () => {
+    const today = startOfDay(new Date());
+    const tomorrow = endOfDay(addDays(today, 1));
+
+    switch (activeFilter) {
+      case 'today':
+        setFilteredReminders(
+          reminders.filter(reminder => {
+            const reminderDate = parseISO(reminder.remind_at);
+            return isSameDay(reminderDate, today);
+          })
+        );
+        break;
+      case 'upcoming':
+        setFilteredReminders(
+          reminders.filter(reminder => {
+            const reminderDate = parseISO(reminder.remind_at);
+            return isAfter(reminderDate, tomorrow) && !reminder.completed;
+          })
+        );
+        break;
+      case 'completed':
+        setFilteredReminders(
+          reminders.filter(reminder => reminder.completed)
+        );
+        break;
+      default:
+        setFilteredReminders(reminders);
+    }
+  };
 
   const loadReminders = async () => {
     try {
@@ -148,6 +192,19 @@ const Dashboard = () => {
       locationData = { address: location };
     }
     setSelectedAddress(locationData);
+  };
+
+  const handleCalendarSelectDate = (date, dateReminders) => {
+    // Switch to the today filter and set state if there are reminders for the selected date
+    if (dateReminders && dateReminders.length > 0) {
+      const today = new Date();
+      if (isSameDay(date, today)) {
+        setActiveFilter('today');
+      } else {
+        // If selecting another date with reminders, we could switch to a custom view or keep 'all'
+        setActiveFilter('all');
+      }
+    }
   };
 
   return (
@@ -348,92 +405,106 @@ const Dashboard = () => {
             </form>
           </div>
 
-          {/* Reminders List */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Your Reminders</h2>
-            </div>
-            <div className="p-6">
-              {loading ? (
-                <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5046E4] mx-auto"></div>
-                  <p className="mt-2 text-gray-500">Loading reminders...</p>
-                </div>
-              ) : reminders.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                    </svg>
+          {/* Filter Tabs */}
+          <FilterTabs activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+          
+          {/* View Switcher Content */}
+          {viewMode === 'calendar' ? (
+            <CalendarView 
+              reminders={reminders} 
+              onSelectDate={handleCalendarSelectDate}
+            />
+          ) : (
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Your Reminders</h2>
+              </div>
+              <div className="p-6">
+                {loading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5046E4] mx-auto"></div>
+                    <p className="mt-2 text-gray-500">Loading reminders...</p>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No reminders yet</h3>
-                  <p className="text-gray-500">Create your first reminder to get started!</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {reminders.map((reminder) => {
-                    let locationData = null;
-                    if (reminder.location) {
-                      try {
-                        locationData = typeof reminder.location === 'string' 
-                          ? JSON.parse(reminder.location) 
-                          : reminder.location;
-                      } catch (e) {
-                        locationData = { address: reminder.location };
+                ) : filteredReminders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No reminders found</h3>
+                    <p className="text-gray-500">
+                      {activeFilter === 'all' 
+                        ? 'Create your first reminder to get started!'
+                        : `No reminders in the "${activeFilter}" category`}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredReminders.map((reminder) => {
+                      let locationData = null;
+                      if (reminder.location) {
+                        try {
+                          locationData = typeof reminder.location === 'string' 
+                            ? JSON.parse(reminder.location) 
+                            : reminder.location;
+                        } catch (e) {
+                          locationData = { address: reminder.location };
+                        }
                       }
-                    }
-                    
-                    return (
-                      <div
-                        key={reminder.id}
-                        className={`p-4 border rounded-lg ${
-                          reminder.completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h3 className={`font-medium ${
-                              reminder.completed ? 'line-through text-gray-500' : 'text-gray-900'
-                            }`}>
-                              {reminder.title}
-                            </h3>
-                            <p className="text-sm text-gray-500 mt-1">
-                              📅 {new Date(reminder.remind_at).toLocaleString()}
-                            </p>
-                            {locationData && locationData.address && (
+                      
+                      return (
+                        <div
+                          key={reminder.id}
+                          className={`p-4 border rounded-lg ${
+                            reminder.completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h3 className={`font-medium ${
+                                reminder.completed ? 'line-through text-gray-500' : 'text-gray-900'
+                              }`}>
+                                {reminder.title}
+                              </h3>
+                              <p className="text-sm text-gray-500 mt-1">
+                                📅 {new Date(reminder.remind_at).toLocaleString()}
+                              </p>
+                              {locationData && locationData.address && (
+                                <button
+                                  onClick={() => handleAddressClick(locationData)}
+                                  className="text-sm text-[#5046E4] hover:text-[#4036D4] mt-1 flex items-center space-x-1"
+                                >
+                                  <span>📍</span>
+                                  <span className="underline">{locationData.address}</span>
+                                </button>
+                              )}
+                            </div>
+                            <div className="flex space-x-2">
+                              {!reminder.completed && (
+                                <button
+                                  onClick={() => handleCompleteReminder(reminder.id)}
+                                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                                >
+                                  Complete
+                                </button>
+                              )}
                               <button
-                                onClick={() => handleAddressClick(locationData)}
-                                className="text-sm text-[#5046E4] hover:text-[#4036D4] mt-1 flex items-center space-x-1"
+                                onClick={() => handleDeleteReminder(reminder.id)}
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
                               >
-                                <span>📍</span>
-                                <span className="underline">{locationData.address}</span>
+                                Delete
                               </button>
-                            )}
-                          </div>
-                          <div className="flex space-x-2">
-                            {!reminder.completed && (
-                              <button
-                                onClick={() => handleCompleteReminder(reminder.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
-                              >
-                                Complete
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteReminder(reminder.id)}
-                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
-                            >
-                              Delete
-                            </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>

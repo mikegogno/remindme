@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getCurrentUser, getCurrentSession, signOut } from '../lib/supabaseClient';
-import supabase from '../lib/supabaseClient';
+import storageClient, { 
+  getCurrentUser, 
+  getCurrentSession, 
+  signOut, 
+  isUsingSupabase,
+  setUseSupabase
+} from '../lib/storageAdapter';
 
 const AuthContext = createContext({});
 
@@ -18,7 +23,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session from the storage adapter
     const getInitialSession = async () => {
       try {
         const currentSession = await getCurrentSession();
@@ -36,7 +41,7 @@ export const AuthProvider = ({ children }) => {
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = storageClient.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session);
         
@@ -70,12 +75,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Add ability to toggle storage backend in the context
+  const toggleStorageBackend = (useSupabase) => {
+    setUseSupabase(useSupabase);
+  };
+
   const value = {
     user,
     session,
     loading,
     logout,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    isUsingSupabase: isUsingSupabase(),
+    toggleStorageBackend
   };
 
   return (

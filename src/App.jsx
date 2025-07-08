@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
@@ -7,6 +7,7 @@ import RegisterPage from './pages/auth/RegisterPage';
 import Dashboard from './components/dashboard/Dashboard';
 import TestPage from './pages/TestPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import Layout from './components/Layout';
 
 function App() {
   return (
@@ -24,7 +25,39 @@ function App() {
               path="/app/dashboard" 
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/app/calendar" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Dashboard viewMode="calendar" />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/app/reminders" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/app/settings" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
                 </ProtectedRoute>
               } 
             />
