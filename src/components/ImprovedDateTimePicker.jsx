@@ -28,9 +28,7 @@ const ImprovedDateTimePicker = ({ value, onChange, label = "When should we remin
   // Get today's date as minimum
   const today = new Date().toISOString().split('T')[0];
   
-  // Get current time for default
-  const now = new Date();
-  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
 
   return (
     <div className="space-y-4">

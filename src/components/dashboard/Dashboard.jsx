@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { format, startOfDay, endOfDay, isSameDay, parseISO, addDays, isBefore, isAfter } from 'date-fns';
+import { format, startOfDay, endOfDay, isSameDay, parseISO, addDays, isAfter } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { getReminders, deleteReminder, updateReminder } from '../../lib/storageAdapter';
 import toast from 'react-hot-toast';
-import BirthdayPicker from '../BirthdayPicker';
-import AddressAutocomplete from '../AddressAutocomplete';
+
 import MapAppSelector from '../MapAppSelector';
 import CalendarView from './CalendarView';
 import FilterTabs from './FilterTabs';
@@ -137,14 +136,8 @@ const Dashboard = () => {
       const reminderToUpdate = reminders.find(r => r.id === id);
       if (!reminderToUpdate) return;
 
-      // Create updated reminder with completed status
-      const updatedReminder = {
-        ...reminderToUpdate,
-        completed: true
-      };
-
       // Call the updateReminder function from the storage adapter
-      const { data, error } = await updateReminder(id, { completed: true });
+      const { error } = await updateReminder(id, { completed: true });
 
       if (error) {
         toast.error('Failed to update reminder');
@@ -209,15 +202,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddressClick = (location) => {
-    let locationData;
-    try {
-      locationData = typeof location === 'string' ? JSON.parse(location) : location;
-    } catch (e) {
-      locationData = { address: location };
-    }
-    setSelectedAddress(locationData);
-  };
+
 
   const handleCalendarSelectDate = (date, dateReminders) => {
     // Switch to the today filter and set state if there are reminders for the selected date
@@ -392,7 +377,7 @@ const Dashboard = () => {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {/* Welcome Banner with Gradient */}
-          <div className="bg-gradient-to-r from-[#7C3AED] to-[#5046E4] rounded-xl p-8 mb-8 text-white">
+          <div className="bg-gradient-to-r from-[#5046E4] to-[#5046E4] rounded-xl p-8 mb-8 text-white">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.email?.split('@')[0] || 'User'}!</h1>

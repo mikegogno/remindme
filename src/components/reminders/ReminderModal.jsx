@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, Clock, MapPin, Bell, Share2, Edit, Trash } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, Bell, Edit, Trash } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 const ReminderModal = ({ reminder, onClose, onEdit, onDelete }) => {

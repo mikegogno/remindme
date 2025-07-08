@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const BirthdayPicker = ({ value, onChange, label = "Birthday" }) => {
+const BirthdayPicker = ({ onChange, label = "Birthday" }) => {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedDay, setSelectedDay] = useState('');
   const [selectedYear, setSelectedYear] = useState('');

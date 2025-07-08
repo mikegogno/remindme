@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, MapPin, Bell } from 'lucide-react';
+import { X } from 'lucide-react';
 import ImprovedDateTimePicker from '../ImprovedDateTimePicker';
 import LocationPicker from '../LocationPicker';
 import { useAuth } from '../../context/AuthContext';

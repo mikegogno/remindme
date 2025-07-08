@@ -184,13 +184,13 @@ const localStorageClient = {
     signInWithPassword: async ({ email, password }) => {
       return signIn(email, password);
     },
-    signUp: async ({ email, password, options }) => {
+    signUp: async ({ email, password }) => {
       return signUp(email, password);
     },
     signOut: async () => {
       return signOut();
     },
-    onAuthStateChange: (callback) => {
+    onAuthStateChange: () => {
       // This is a simplified version that doesn't actually listen for changes
       // In a real implementation, we would use events
       const subscription = {
@@ -200,9 +200,9 @@ const localStorageClient = {
     }
   },
   from: (table) => ({
-    select: (columns = '*') => ({
+    select: () => ({
       eq: (column, value) => ({
-        order: (orderBy, { ascending } = {}) => ({
+        order: () => ({
           async then(resolve) {
             if (table === 'app_8eq3vd_reminders' && column === 'user_id') {
               const { data, error } = await getReminders(value);

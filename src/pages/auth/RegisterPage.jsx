@@ -53,7 +53,7 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await signUp(formData.email, formData.password);
+      const { error } = await signUp(formData.email, formData.password);
 
       if (error) {
         toast.error(error.message);

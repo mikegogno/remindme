@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Bell, Calendar, Star, ArrowRight, CheckCircle } from 'lucide-react';
+import { MapPin, Bell, Calendar, ArrowRight, CheckCircle } from 'lucide-react';
 import LocationPicker from '../components/LocationPicker';
 
 const MarketingPage = () => {
