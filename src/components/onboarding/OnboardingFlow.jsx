@@ -85,7 +85,7 @@ const OnboardingFlow = ({ onComplete }) => {
               <p className="text-gray-600">{step.description}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">What you'll get:</h3>
+              <h3 className="font-semibold text-gray-900 mb-3">What you&apos;ll get:</h3>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-center space-x-2">
                   <Check className="w-4 h-4 text-green-500" />
@@ -244,7 +244,7 @@ const OnboardingFlow = ({ onComplete }) => {
               {userData.notificationsEnabled && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-sm text-yellow-800">
-                    <strong>Note:</strong> You'll be asked to allow notifications when you create your first reminder. 
+                    <strong>Note:</strong> You&apos;ll be asked to allow notifications when you create your first reminder. 
                     This helps ensure you never miss important tasks!
                   </p>
                 </div>

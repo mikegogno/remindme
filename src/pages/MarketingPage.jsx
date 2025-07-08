@@ -189,7 +189,7 @@ const MarketingPage = () => {
                   
                   <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800">
-                      <strong>Perfect!</strong> You could now create a reminder like "Buy groceries" 
+                      <strong>Perfect!</strong> You could now create a reminder like &quot;Buy groceries&quot; 
                       that triggers when you arrive at this location.
                     </p>
                   </div>

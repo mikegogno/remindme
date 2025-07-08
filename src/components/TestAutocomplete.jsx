@@ -47,9 +47,9 @@ const TestAutocomplete = () => {
         <div className="bg-yellow-50 p-4 rounded-lg">
           <h3 className="font-medium text-yellow-800 mb-2">Testing Instructions:</h3>
           <ul className="text-sm text-yellow-700 space-y-1">
-            <li>1. Type "na" → No dropdown should appear</li>
-            <li>2. Type "nan" → Dropdown should appear with suggestions</li>
-            <li>3. Try "2 nancy" → Should show address suggestions</li>
+            <li>1. Type &quot;na&quot; → No dropdown should appear</li>
+            <li>2. Type &quot;nan&quot; → Dropdown should appear with suggestions</li>
+            <li>3. Try &quot;2 nancy&quot; → Should show address suggestions</li>
             <li>4. API Key: AIzaSyB0Sdpa278GhhxAppSHlzTGaho1y3zplRg</li>
           </ul>
         </div>
