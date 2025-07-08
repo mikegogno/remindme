@@ -391,22 +391,80 @@ const Dashboard = () => {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          {/* Banner to create new reminder */}
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <div className="flex justify-between items-center">
+          {/* Welcome Banner with Gradient */}
+          <div className="bg-gradient-to-r from-[#7C3AED] to-[#5046E4] rounded-xl p-8 mb-8 text-white">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-medium text-gray-900 mb-1">Need to remember something?</h2>
-                <p className="text-sm text-gray-500">Create a new reminder to stay on top of your tasks</p>
+                <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.email?.split('@')[0] || 'User'}!</h1>
+                <div className="flex items-center space-x-2 mb-3">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+                  </svg>
+                  <span className="text-lg font-medium">{format(new Date(), 'EEEE, MMMM d')}</span>
+                </div>
+                <p className="text-lg opacity-90">
+                  You have {filteredReminders.filter(r => !r.completed).length} upcoming reminders
+                </p>
               </div>
-              <button
-                onClick={handleOpenReminderForm}
-                className="bg-[#5046E4] hover:bg-[#4036D4] text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center space-x-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span>Add Reminder</span>
-              </button>
+            </div>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="flex items-center">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <svg className="w-6 h-6 text-[#5046E4]" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-gray-900">{reminders.length}</p>
+                  <p className="text-sm text-gray-500">Total Reminders</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="flex items-center">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-gray-900">{reminders.filter(r => r.completed).length}</p>
+                  <p className="text-sm text-gray-500">Completed</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="flex items-center">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-gray-900">{reminders.filter(r => !r.completed && new Date(r.remind_at) > new Date()).length}</p>
+                  <p className="text-sm text-gray-500">Upcoming</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="flex items-center">
+                <div className="p-3 bg-red-100 rounded-lg">
+                  <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-gray-900">{reminders.filter(r => !r.completed && new Date(r.remind_at) < new Date()).length}</p>
+                  <p className="text-sm text-gray-500">Overdue</p>
+                </div>
+              </div>
             </div>
           </div>
 
