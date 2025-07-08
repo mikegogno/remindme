@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, UserPlus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import RemindMeLogo from '../../components/RemindMeLogo';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    name: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -29,7 +29,7 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.email || !formData.password || !formData.confirmPassword) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -40,19 +40,14 @@ const RegisterPage = () => {
     }
 
     if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
+      toast.error('Password must be at least 6 characters');
       return;
     }
 
     setIsLoading(true);
     
     try {
-      await register({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password
-      });
+      await register(formData.email, formData.password);
       toast.success('Account created successfully!');
       navigate('/app/dashboard');
     } catch (error) {
@@ -67,51 +62,34 @@ const RegisterPage = () => {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center animate-fade-in">
-          <div className="mx-auto h-16 w-16 bg-primary-500 rounded-full flex items-center justify-center mb-4 shadow-lg">
-            <UserPlus className="h-8 w-8 text-white" />
+          <div className="flex justify-center mb-6">
+            <RemindMeLogo size="lg" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Create account</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
           <p className="text-gray-600">Join RemindMe and never forget again</p>
         </div>
 
-        {/* Register Form */}
+        {/* Registration Form */}
         <form className="mt-8 space-y-6 animate-slide-up" onSubmit={handleSubmit}>
-          <div className="card p-8">
+          <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100">
             <div className="space-y-6">
-              {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      id="firstName"
-                      name="firstName"
-                      type="text"
-                      required
-                      className="input-primary pl-10"
-                      placeholder="First name"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                    />
+              {/* Name Field */}
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
                   </div>
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Last Name
-                  </label>
                   <input
-                    id="lastName"
-                    name="lastName"
+                    id="name"
+                    name="name"
                     type="text"
-                    required
-                    className="input-primary"
-                    placeholder="Last name"
-                    value={formData.lastName}
+                    autoComplete="name"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm hover:shadow-md"
+                    placeholder="Enter your full name"
+                    value={formData.name}
                     onChange={handleChange}
                   />
                 </div>
@@ -120,7 +98,7 @@ const RegisterPage = () => {
               {/* Email Field */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
+                  Email Address *
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -132,7 +110,7 @@ const RegisterPage = () => {
                     type="email"
                     autoComplete="email"
                     required
-                    className="input-primary pl-10"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm hover:shadow-md"
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleChange}
@@ -143,7 +121,7 @@ const RegisterPage = () => {
               {/* Password Field */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
+                  Password *
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -155,15 +133,15 @@ const RegisterPage = () => {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                     required
-                    className="input-primary pl-10 pr-10"
-                    placeholder="Create password"
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm hover:shadow-md"
+                    placeholder="Create a password"
                     value={formData.password}
                     onChange={handleChange}
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <button
                       type="button"
-                      className="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+                      className="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? (
@@ -174,12 +152,15 @@ const RegisterPage = () => {
                     </button>
                   </div>
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Password must be at least 6 characters
+                </p>
               </div>
 
               {/* Confirm Password Field */}
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
+                  Confirm Password *
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -191,15 +172,15 @@ const RegisterPage = () => {
                     type={showConfirmPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                     required
-                    className="input-primary pl-10 pr-10"
-                    placeholder="Confirm password"
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm hover:shadow-md"
+                    placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <button
                       type="button"
-                      className="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+                      className="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
                       {showConfirmPassword ? (
@@ -212,20 +193,44 @@ const RegisterPage = () => {
                 </div>
               </div>
 
+              {/* Terms */}
+              <div className="flex items-center">
+                <input
+                  id="terms"
+                  name="terms"
+                  type="checkbox"
+                  className="h-4 w-4 text-primary-500 focus:ring-primary-500 border-gray-300 rounded transition-colors"
+                  required
+                />
+                <label htmlFor="terms" className="ml-3 block text-sm text-gray-600">
+                  I agree to the{' '}
+                  <Link to="/terms" className="text-primary-500 hover:text-primary-600 font-medium">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy" className="text-primary-500 hover:text-primary-600 font-medium">
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+
               {/* Submit Button */}
               <div>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full btn-primary py-3 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full inline-flex items-center justify-center px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   {isLoading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="spinner mr-2"></div>
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                       Creating account...
-                    </div>
+                    </>
                   ) : (
-                    'Create account'
+                    <>
+                      <UserPlus className="h-5 w-5 mr-2" />
+                      Create Account
+                    </>
                   )}
                 </button>
               </div>

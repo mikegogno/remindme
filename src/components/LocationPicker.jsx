@@ -1,392 +1,188 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Search, Loader2, X, Navigation } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, MapPin, Search, Navigation } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-const LocationPicker = ({ 
-  value, 
-  onChange, 
-  placeholder = "Search for locations...",
-  label,
-  showCurrentLocation = false,
-  size = 'default',
-  className = '',
-  disabled = false 
-}) => {
-  const [inputValue, setInputValue] = useState('');
-  const [predictions, setPredictions] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [error, setError] = useState(null);
-  
-  const inputRef = useRef(null);
-  const autocompleteService = useRef(null);
-  const placesService = useRef(null);
-  const timeoutRef = useRef(null);
+const LocationPicker = ({ onSelect, onClose }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
 
-  // Initialize Google Places services
-  useEffect(() => {
-    let retryCount = 0;
-    const maxRetries = 10;
-    
-    const initializeGoogleMaps = () => {
-      if (window.google && window.google.maps && window.google.maps.places) {
-        try {
-          autocompleteService.current = new window.google.maps.places.AutocompleteService();
-          placesService.current = new window.google.maps.places.PlacesService(
-            document.createElement('div')
-          );
-          console.log('Google Places API initialized successfully');
-          setError(null);
-        } catch (err) {
-          console.error('Error initializing Google Places API:', err);
-          setError('Failed to initialize location service');
-        }
-      } else {
-        retryCount++;
-        if (retryCount < maxRetries) {
-          console.warn(`Google Places API not available, retrying... (${retryCount}/${maxRetries})`);
-          setTimeout(initializeGoogleMaps, 500);
-        } else {
-          console.error('Google Places API failed to load after maximum retries');
-          setError('Location service unavailable. Please refresh the page.');
-        }
+  const predefinedLocations = [
+    { name: 'Home', address: 'Your home address' },
+    { name: 'Work', address: 'Your workplace' },
+    { name: 'Gym', address: 'Local fitness center' },
+    { name: 'Grocery Store', address: 'Nearby supermarket' },
+    { name: 'School', address: 'Educational institution' },
+    { name: 'Hospital', address: 'Medical facility' },
+    { name: 'Bank', address: 'Financial institution' },
+    { name: 'Restaurant', address: 'Dining establishment' }
+  ];
+
+  const handleCurrentLocation = async () => {
+    setLoading(true);
+    try {
+      if (!navigator.geolocation) {
+        toast.error('Geolocation is not supported by this browser');
+        return;
       }
-    };
 
-    // Start initialization immediately, then also listen for window load
-    initializeGoogleMaps();
-    
-    // Also try after window load in case script loads later
-    if (document.readyState === 'loading') {
-      window.addEventListener('load', initializeGoogleMaps);
-      return () => window.removeEventListener('load', initializeGoogleMaps);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const locationString = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+          onSelect(locationString);
+          toast.success('Current location selected');
+          setLoading(false);
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          toast.error('Failed to get current location');
+          setLoading(false);
+        }
+      );
+    } catch (error) {
+      console.error('Error accessing geolocation:', error);
+      toast.error('Failed to access location services');
+      setLoading(false);
     }
-  }, []);
+  };
 
-  // Update input value when value prop changes
-  useEffect(() => {
-    if (value) {
-      setInputValue(value.description || value.formatted_address || value.name || '');
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    if (value.length > 2) {
+      const filtered = predefinedLocations.filter(location =>
+        location.name.toLowerCase().includes(value.toLowerCase()) ||
+        location.address.toLowerCase().includes(value.toLowerCase())
+      );
+      setSuggestions(filtered);
     } else {
-      setInputValue('');
-    }
-  }, [value]);
-
-  // Debounced search function
-  const performSearch = (query) => {
-    if (!query.trim()) {
-      setPredictions([]);
-      return;
-    }
-
-    if (!autocompleteService.current) {
-      console.warn('AutocompleteService not initialized yet');
-      setError('Location service initializing, please try again...');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    const request = {
-      input: query,
-      types: ['establishment', 'geocode']
-      // Removed country restriction to allow global search
-    };
-
-    console.log('Performing Google Places search for:', query);
-
-    autocompleteService.current.getPlacePredictions(request, (predictions, status) => {
-      setIsLoading(false);
-      console.log('Google Places API response:', { status, predictions });
-      
-      if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-        setPredictions(predictions);
-      } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-        setPredictions([]);
-      } else {
-        console.error('Google Places API error:', status);
-        setError(`Location service error: ${status}`);
-        setPredictions([]);
-      }
-    });
-  };
-
-  // Handle input change with debouncing and 3-character minimum
-  const handleInputChange = (e) => {
-    const newValue = e.target.value;
-    setInputValue(newValue);
-    
-    // Clear existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // Only show dropdown and search if we have 3+ characters
-    if (newValue.length >= 3) {
-      setIsOpen(true);
-      // Set new timeout for debounced search
-      timeoutRef.current = setTimeout(() => {
-        performSearch(newValue);
-      }, 300);
-    } else {
-      setIsOpen(false);
-      setPredictions([]);
+      setSuggestions([]);
     }
   };
 
-  // Get place details
-  const getPlaceDetails = (placeId, prediction) => {
-    if (!placesService.current) return;
-
-    const request = {
-      placeId: placeId,
-      fields: ['name', 'formatted_address', 'geometry', 'place_id', 'types']
-    };
-
-    placesService.current.getDetails(request, (place, status) => {
-      if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-        const locationData = {
-          place_id: place.place_id,
-          name: place.name,
-          description: prediction.description,
-          formatted_address: place.formatted_address,
-          coordinates: {
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng()
-          },
-          types: place.types
-        };
-        
-        onChange(locationData);
-        setInputValue(prediction.description);
-        setIsOpen(false);
-        setPredictions([]);
-      } else {
-        setError('Failed to get place details');
-      }
-    });
-  };
-
-  // Handle prediction selection
-  const handlePredictionSelect = (prediction) => {
-    getPlaceDetails(prediction.place_id, prediction);
-  };
-
-  // Get current location
-  const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by this browser');
-      return;
-    }
-
-    setIsGettingLocation(true);
-    setError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        if (window.google && window.google.maps) {
-          const geocoder = new window.google.maps.Geocoder();
-          const latlng = new window.google.maps.LatLng(latitude, longitude);
-          
-          geocoder.geocode({ location: latlng }, (results, status) => {
-            setIsGettingLocation(false);
-            
-            if (status === 'OK' && results[0]) {
-              const place = results[0];
-              const locationData = {
-                place_id: place.place_id,
-                name: 'Current Location',
-                description: place.formatted_address,
-                formatted_address: place.formatted_address,
-                coordinates: {
-                  lat: latitude,
-                  lng: longitude
-                },
-                types: place.types || ['current_location']
-              };
-              
-              onChange(locationData);
-              setInputValue(place.formatted_address);
-              setIsOpen(false);
-            } else {
-              setError('Failed to get address for current location');
-            }
-          });
-        }
-      },
-      (error) => {
-        setIsGettingLocation(false);
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setError('Location access denied by user');
-            break;
-          case error.POSITION_UNAVAILABLE:
-            setError('Location information is unavailable');
-            break;
-          case error.TIMEOUT:
-            setError('Location request timed out');
-            break;
-          default:
-            setError('An unknown error occurred while getting location');
-            break;
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  };
-
-  // Clear selection
-  const clearSelection = () => {
-    setInputValue('');
-    onChange(null);
-    setIsOpen(false);
-    setPredictions([]);
-    inputRef.current?.focus();
-  };
-
-  // Handle input focus - only show dropdown if 3+ characters
-  const handleFocus = () => {
-    if (inputValue.length >= 3) {
-      setIsOpen(true);
-      if (predictions.length === 0) {
-        performSearch(inputValue);
-      }
-    }
-  };
-
-  // Handle input blur (with delay to allow for clicks)
-  const handleBlur = () => {
-    setTimeout(() => {
-      setIsOpen(false);
-    }, 200);
-  };
-
-  // Size classes
-  const sizeClasses = {
-    sm: 'text-sm py-2 px-3',
-    default: 'text-base py-3 px-4',
-    lg: 'text-lg py-4 px-5'
-  };
-
-  const iconSizeClasses = {
-    sm: 'w-4 h-4',
-    default: 'w-5 h-5',
-    lg: 'w-6 h-6'
+  const handleSelectLocation = (location) => {
+    onSelect(`${location.name} - ${location.address}`);
   };
 
   return (
-    <div className={`relative ${className}`}>
-      {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {label}
-        </label>
-      )}
-      
-      <div className="relative">
-        <div className="relative">
-          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 ${iconSizeClasses[size]}`} />
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={handleInputChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            placeholder={placeholder}
-            disabled={disabled}
-            className={`
-              w-full pl-10 pr-12 border border-gray-300 rounded-lg 
-              focus:ring-2 focus:ring-[#5046E4] focus:border-transparent
-              disabled:bg-gray-100 disabled:cursor-not-allowed
-              ${sizeClasses[size]}
-            `}
-          />
-          
-          {/* Loading spinner or clear button */}
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-            {isLoading && (
-              <Loader2 className={`animate-spin text-gray-400 ${iconSizeClasses[size]}`} />
-            )}
-            
-            {inputValue && !isLoading && (
-              <button
-                type="button"
-                onClick={clearSelection}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className={iconSizeClasses[size]} />
-              </button>
-            )}
-          </div>
-        </div>
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Select Location</h2>
+        <button
+          onClick={onClose}
+          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
 
-        {/* Current location button */}
-        {showCurrentLocation && (
-          <button
-            type="button"
-            onClick={getCurrentLocation}
-            disabled={isGettingLocation || disabled}
-            className={`
-              mt-2 flex items-center space-x-2 text-sm text-[#5046E4] hover:text-[#4338CA]
-              disabled:opacity-50 disabled:cursor-not-allowed transition-colors
-            `}
-          >
-            {isGettingLocation ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Navigation className="w-4 h-4" />
-            )}
-            <span>Use current location</span>
-          </button>
+      {/* Current Location Button */}
+      <button
+        onClick={handleCurrentLocation}
+        disabled={loading}
+        className="w-full flex items-center justify-center px-4 py-3 bg-primary-50 hover:bg-primary-100 text-primary-600 font-medium rounded-xl transition-all duration-200 border border-primary-200 mb-6 disabled:opacity-50"
+      >
+        {loading ? (
+          <>
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-500 mr-2"></div>
+            Getting location...
+          </>
+        ) : (
+          <>
+            <Navigation className="h-5 w-5 mr-2" />
+            Use Current Location
+          </>
         )}
+      </button>
 
-        {/* Error message */}
-        {error && (
-          <div className="mt-2 text-sm text-red-600 flex items-center space-x-1">
-            <X className="w-4 h-4" />
-            <span>{error}</span>
-          </div>
-        )}
+      {/* Search */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search for a location..."
+          value={searchTerm}
+          onChange={handleSearch}
+          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
+        />
+      </div>
 
-        {/* Predictions dropdown */}
-        {isOpen && predictions.length > 0 && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-            {predictions.map((prediction) => (
+      {/* Search Results */}
+      {suggestions.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Search Results</h3>
+          <div className="space-y-2">
+            {suggestions.map((location, index) => (
               <button
-                key={prediction.place_id}
-                type="button"
-                onClick={() => handlePredictionSelect(prediction)}
-                className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-start space-x-3 border-b border-gray-100 last:border-b-0"
+                key={index}
+                onClick={() => handleSelectLocation(location)}
+                className="w-full text-left p-4 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition-colors"
               >
-                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 truncate">
-                    {prediction.structured_formatting?.main_text || prediction.description}
-                  </div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {prediction.structured_formatting?.secondary_text || ''}
+                <div className="flex items-start">
+                  <MapPin className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-900">{location.name}</p>
+                    <p className="text-sm text-gray-500">{location.address}</p>
                   </div>
                 </div>
               </button>
             ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* No results message */}
-        {isOpen && inputValue && !isLoading && predictions.length === 0 && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4">
-            <div className="text-sm text-gray-500 text-center">
-              No locations found for &quot;{inputValue}&quot;
-            </div>
-          </div>
-        )}
+      {/* Predefined Locations */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-700 mb-3">Quick Select</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {predefinedLocations.map((location, index) => (
+            <button
+              key={index}
+              onClick={() => handleSelectLocation(location)}
+              className="p-4 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition-all duration-200 hover:shadow-md text-left"
+            >
+              <div className="flex items-center">
+                <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 text-sm truncate">{location.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{location.address}</p>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Manual Entry */}
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Enter custom location..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && searchTerm.trim()) {
+                onSelect(searchTerm.trim());
+              }
+            }}
+          />
+          <button
+            onClick={() => {
+              if (searchTerm.trim()) {
+                onSelect(searchTerm.trim());
+              }
+            }}
+            disabled={!searchTerm.trim()}
+            className="px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Add
+          </button>
+        </div>
       </div>
     </div>
   );
