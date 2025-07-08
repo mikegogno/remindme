@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { storageAdapter } from '../lib/storageAdapter';
+import storageAdapter from '../lib/storageAdapter';
 import toast from 'react-hot-toast';
 
 const RemindersContext = createContext();
@@ -25,11 +25,13 @@ export const RemindersProvider = ({ children }) => {
   const loadReminders = async () => {
     try {
       setLoading(true);
-      const data = await storageAdapter.getReminders();
+      // Use the individual functions instead of storageAdapter.getReminders()
+      const data = await getReminders();
       setReminders(data || []);
     } catch (error) {
       console.error('Error loading reminders:', error);
       toast.error('Failed to load reminders');
+      setReminders([]);
     } finally {
       setLoading(false);
     }
@@ -45,7 +47,9 @@ export const RemindersProvider = ({ children }) => {
         updatedAt: new Date().toISOString()
       };
 
-      const savedReminder = await storageAdapter.createReminder(newReminder);
+      // Use the individual function
+      const { createReminder } = await import('../lib/storageAdapter');
+      const savedReminder = await createReminder(newReminder);
       setReminders(prev => [savedReminder, ...prev]);
       toast.success('Reminder created successfully!');
       return savedReminder;
@@ -58,7 +62,8 @@ export const RemindersProvider = ({ children }) => {
 
   const updateReminder = async (id, updates) => {
     try {
-      const updatedReminder = await storageAdapter.updateReminder(id, {
+      const { updateReminder: updateReminderFn } = await import('../lib/storageAdapter');
+      const updatedReminder = await updateReminderFn(id, {
         ...updates,
         updatedAt: new Date().toISOString()
       });
@@ -79,7 +84,8 @@ export const RemindersProvider = ({ children }) => {
 
   const deleteReminder = async (id) => {
     try {
-      await storageAdapter.deleteReminder(id);
+      const { deleteReminder: deleteReminderFn } = await import('../lib/storageAdapter');
+      await deleteReminderFn(id);
       setReminders(prev => prev.filter(reminder => reminder.id !== id));
       toast.success('Reminder deleted successfully!');
     } catch (error) {
@@ -94,7 +100,8 @@ export const RemindersProvider = ({ children }) => {
       const reminder = reminders.find(r => r.id === id);
       if (!reminder) return;
 
-      const updatedReminder = await storageAdapter.updateReminder(id, {
+      const { updateReminder: updateReminderFn } = await import('../lib/storageAdapter');
+      const updatedReminder = await updateReminderFn(id, {
         completed: !reminder.completed,
         updatedAt: new Date().toISOString()
       });
@@ -147,6 +154,17 @@ export const RemindersProvider = ({ children }) => {
     }).length;
 
     return { total, completed, active, today };
+  };
+
+  // Helper function to get reminders using dynamic import
+  const getReminders = async () => {
+    try {
+      const { getReminders: getRemindersFn } = await import('../lib/storageAdapter');
+      return await getRemindersFn();
+    } catch (error) {
+      console.error('Error importing getReminders:', error);
+      return [];
+    }
   };
 
   const value = {
