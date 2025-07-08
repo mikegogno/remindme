@@ -1,27 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { format, startOfDay, endOfDay, isSameDay, parseISO, addDays, isBefore, isAfter } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
-import { getReminders, createReminder, updateReminder, deleteReminder } from '../../lib/storageAdapter';
+import { getReminders, deleteReminder, updateReminder } from '../../lib/storageAdapter';
 import toast from 'react-hot-toast';
 import BirthdayPicker from '../BirthdayPicker';
 import AddressAutocomplete from '../AddressAutocomplete';
 import MapAppSelector from '../MapAppSelector';
 import CalendarView from './CalendarView';
 import FilterTabs from './FilterTabs';
+import ReminderForm from '../reminders/ReminderForm';
+import ReminderModal from '../reminders/ReminderModal';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [reminders, setReminders] = useState([]);
   const [filteredReminders, setFilteredReminders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [newReminder, setNewReminder] = useState('');
-  const [reminderDate, setReminderDate] = useState('');
-  const [reminderLocation, setReminderLocation] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
   const [userProfile, setUserProfile] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [isReminderFormOpen, setIsReminderFormOpen] = useState(false);
+  const [selectedReminder, setSelectedReminder] = useState(null);
+  const [isViewingReminder, setIsViewingReminder] = useState(false);
+  const [reminderToEdit, setReminderToEdit] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -92,49 +95,55 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddReminder = async (e) => {
-    e.preventDefault();
-    
-    if (!newReminder.trim()) {
-      toast.error('Please enter a reminder');
-      return;
-    }
-
-    if (!reminderDate) {
-      toast.error('Please select a date and time');
-      return;
-    }
-
-    try {
-      const reminderData = {
-        user_id: user.id,
-        title: newReminder.trim(),
-        remind_at: new Date(reminderDate).toISOString(),
-        location: reminderLocation ? JSON.stringify(reminderLocation) : null,
-        completed: false,
-        created_at: new Date().toISOString()
-      };
-
-      const { data, error } = await createReminder(reminderData);
-
-      if (error) {
-        toast.error('Failed to create reminder');
-        console.error('Error creating reminder:', error);
-      } else {
-        toast.success('Reminder created successfully!');
-        setReminders([data, ...reminders]);
-        setNewReminder('');
-        setReminderDate('');
-        setReminderLocation(null);
-      }
-    } catch (error) {
-      toast.error('An unexpected error occurred');
-      console.error('Error:', error);
-    }
+  // Open the reminder form for creating a new reminder
+  const handleOpenReminderForm = () => {
+    setReminderToEdit(null);
+    setIsReminderFormOpen(true);
   };
 
+  // Open the reminder form for editing an existing reminder
+  const handleEditReminder = (reminder) => {
+    setReminderToEdit(reminder);
+    setIsReminderFormOpen(true);
+    setIsViewingReminder(false);
+  };
+
+  // Handle save of a new or updated reminder
+  const handleSaveReminder = (savedReminder) => {
+    if (reminderToEdit) {
+      // Update existing reminder in the list
+      setReminders(reminders.map(r => 
+        r.id === savedReminder.id ? savedReminder : r
+      ));
+    } else {
+      // Add new reminder to the list
+      setReminders([savedReminder, ...reminders]);
+    }
+
+    // Close the form
+    setIsReminderFormOpen(false);
+    setReminderToEdit(null);
+  };
+
+  // Open the reminder detail modal
+  const handleViewReminder = (reminder) => {
+    setSelectedReminder(reminder);
+    setIsViewingReminder(true);
+  };
+
+  // Handle marking a reminder as complete
   const handleCompleteReminder = async (id) => {
     try {
+      const reminderToUpdate = reminders.find(r => r.id === id);
+      if (!reminderToUpdate) return;
+
+      // Create updated reminder with completed status
+      const updatedReminder = {
+        ...reminderToUpdate,
+        completed: true
+      };
+
+      // Call the updateReminder function from the storage adapter
       const { data, error } = await updateReminder(id, { completed: true });
 
       if (error) {
@@ -142,9 +151,16 @@ const Dashboard = () => {
         console.error('Error updating reminder:', error);
       } else {
         toast.success('Reminder marked as completed!');
+        
+        // Update the reminders list
         setReminders(reminders.map(reminder => 
           reminder.id === id ? { ...reminder, completed: true } : reminder
         ));
+
+        // If this reminder is currently being viewed, update the selected reminder as well
+        if (selectedReminder && selectedReminder.id === id) {
+          setSelectedReminder({ ...selectedReminder, completed: true });
+        }
       }
     } catch (error) {
       toast.error('An unexpected error occurred');
@@ -152,6 +168,7 @@ const Dashboard = () => {
     }
   };
 
+  // Handle deleting a reminder
   const handleDeleteReminder = async (id) => {
     if (!confirm('Are you sure you want to delete this reminder?')) {
       return;
@@ -165,7 +182,15 @@ const Dashboard = () => {
         console.error('Error deleting reminder:', error);
       } else {
         toast.success('Reminder deleted successfully!');
+        
+        // Remove from reminders list
         setReminders(reminders.filter(reminder => reminder.id !== id));
+        
+        // Close the modal if we're viewing the deleted reminder
+        if (selectedReminder && selectedReminder.id === id) {
+          setIsViewingReminder(false);
+          setSelectedReminder(null);
+        }
       }
     } catch (error) {
       toast.error('An unexpected error occurred');
@@ -255,7 +280,7 @@ const Dashboard = () => {
                 </div>
                 
                 <button 
-                  onClick={() => document.querySelector('input[placeholder="Enter your reminder..."]').focus()}
+                  onClick={handleOpenReminderForm}
                   className="flex items-center space-x-2 bg-[#5046E4] text-white px-6 py-3 rounded-full font-medium hover:bg-[#4338CA] transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -366,44 +391,49 @@ const Dashboard = () => {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          {/* Add Reminder Form */}
+          {/* Banner to create new reminder */}
           <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">+ New Reminder</h2>
-            <form onSubmit={handleAddReminder} className="space-y-6">
+            <div className="flex justify-between items-center">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  What do you want to be reminded about?
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter your reminder..."
-                  value={newReminder}
-                  onChange={(e) => setNewReminder(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:border-[#5046E4]"
-                />
+                <h2 className="text-lg font-medium text-gray-900 mb-1">Need to remember something?</h2>
+                <p className="text-sm text-gray-500">Create a new reminder to stay on top of your tasks</p>
               </div>
-              
-              <BirthdayPicker
-                value={reminderDate}
-                onChange={setReminderDate}
-                label="When should we remind you?"
-              />
-              
-              <AddressAutocomplete
-                value={reminderLocation}
-                onChange={setReminderLocation}
-                placeholder="Enter location (optional)..."
-                label="Where (Optional)"
-              />
-              
               <button
-                type="submit"
-                className="w-full bg-[#5046E4] hover:bg-[#4036D4] text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                onClick={handleOpenReminderForm}
+                className="bg-[#5046E4] hover:bg-[#4036D4] text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center space-x-2"
               >
-                Create Reminder
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Add Reminder</span>
               </button>
-            </form>
+            </div>
           </div>
+
+          {/* Reminder Form Modal */}
+          {isReminderFormOpen && (
+            <ReminderForm 
+              initialData={reminderToEdit}
+              onClose={() => {
+                setIsReminderFormOpen(false);
+                setReminderToEdit(null);
+              }}
+              onSave={handleSaveReminder}
+            />
+          )}
+
+          {/* Reminder Detail Modal */}
+          {isViewingReminder && selectedReminder && (
+            <ReminderModal 
+              reminder={selectedReminder}
+              onClose={() => {
+                setIsViewingReminder(false);
+                setSelectedReminder(null);
+              }}
+              onEdit={() => handleEditReminder(selectedReminder)}
+              onDelete={() => handleDeleteReminder(selectedReminder.id)}
+            />
+          )}
 
           {/* Filter Tabs */}
           <FilterTabs activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
@@ -413,6 +443,7 @@ const Dashboard = () => {
             <CalendarView 
               reminders={reminders} 
               onSelectDate={handleCalendarSelectDate}
+              onViewReminder={handleViewReminder}
             />
           ) : (
             <div className="bg-white shadow rounded-lg">
@@ -453,47 +484,112 @@ const Dashboard = () => {
                         }
                       }
                       
+                      const reminderDate = new Date(reminder.remind_at);
+                      const isUpcoming = reminderDate > new Date() && !reminder.completed;
+                      const isPastDue = reminderDate < new Date() && !reminder.completed;
+                      
                       return (
                         <div
                           key={reminder.id}
-                          className={`p-4 border rounded-lg ${
-                            reminder.completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                          className={`p-4 border rounded-lg transition-all hover:shadow-md cursor-pointer ${
+                            reminder.completed 
+                              ? 'bg-green-50 border-green-200' 
+                              : isPastDue
+                                ? 'bg-red-50 border-red-200'
+                                : 'bg-white border-gray-200'
                           }`}
+                          onClick={() => handleViewReminder(reminder)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <h3 className={`font-medium ${
-                                reminder.completed ? 'line-through text-gray-500' : 'text-gray-900'
-                              }`}>
-                                {reminder.title}
-                              </h3>
+                              <div className="flex items-center space-x-2">
+                                <h3 className={`font-medium ${
+                                  reminder.completed ? 'line-through text-gray-500' : 'text-gray-900'
+                                }`}>
+                                  {reminder.title}
+                                </h3>
+                                
+                                {/* Priority indicator */}
+                                {reminder.priority && (
+                                  <span className={`inline-flex rounded-full h-2 w-2 ${
+                                    reminder.priority === 'high' ? 'bg-red-500' :
+                                    reminder.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                                  }`}></span>
+                                )}
+                              </div>
+                              
                               <p className="text-sm text-gray-500 mt-1">
-                                📅 {new Date(reminder.remind_at).toLocaleString()}
+                                📅 {reminderDate.toLocaleString()}
                               </p>
+                              
                               {locationData && locationData.address && (
-                                <button
-                                  onClick={() => handleAddressClick(locationData)}
-                                  className="text-sm text-[#5046E4] hover:text-[#4036D4] mt-1 flex items-center space-x-1"
-                                >
+                                <div className="text-sm text-[#5046E4] mt-1 flex items-center space-x-1">
                                   <span>📍</span>
-                                  <span className="underline">{locationData.address}</span>
-                                </button>
+                                  <span className="truncate">{locationData.address}</span>
+                                </div>
                               )}
+                              
+                              {/* Reminder status badges */}
+                              <div className="flex mt-2 space-x-2">
+                                {isPastDue && (
+                                  <span className="inline-block px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
+                                    Past Due
+                                  </span>
+                                )}
+                                {isUpcoming && (
+                                  <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                                    Upcoming
+                                  </span>
+                                )}
+                                {reminder.completed && (
+                                  <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                    Completed
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex space-x-2">
+                            
+                            {/* Quick action buttons */}
+                            <div className="flex flex-col space-y-2 ml-4">
                               {!reminder.completed && (
                                 <button
-                                  onClick={() => handleCompleteReminder(reminder.id)}
-                                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCompleteReminder(reminder.id);
+                                  }}
+                                  className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full"
+                                  title="Mark as Complete"
                                 >
-                                  Complete
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
                                 </button>
                               )}
+                              
                               <button
-                                onClick={() => handleDeleteReminder(reminder.id)}
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditReminder(reminder);
+                                }}
+                                className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full"
+                                title="Edit Reminder"
                               >
-                                Delete
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteReminder(reminder.id);
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full"
+                                title="Delete Reminder"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                               </button>
                             </div>
                           </div>
