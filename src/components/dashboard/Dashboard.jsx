@@ -22,39 +22,11 @@ const Dashboard = () => {
     if (user) {
       loadReminders();
     }
-    
-    // Load user profile with event listener for storage changes
-    const loadProfile = () => {
-      const savedProfile = localStorage.getItem('userProfile');
-      if (savedProfile) {
-        try {
-          setUserProfile(JSON.parse(savedProfile));
-        } catch (e) {
-          console.error('Error parsing user profile:', e);
-        }
-      }
-    };
-    
-    loadProfile();
-    
-    // Listen for storage changes and custom profile updates
-    const handleStorageChange = (e) => {
-      if (e.key === 'userProfile') {
-        loadProfile();
-      }
-    };
-    
-    const handleProfileUpdate = (e) => {
-      setUserProfile(e.detail);
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('userProfileUpdated', handleProfileUpdate);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('userProfileUpdated', handleProfileUpdate);
-    };
+    // Load user profile
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      setUserProfile(JSON.parse(savedProfile));
+    }
   }, [user]);
 
   const loadReminders = async () => {
@@ -194,45 +166,47 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {/* View Switcher - Simple Text Design as requested */}
-              <div className="flex items-center space-x-12">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center space-x-3 px-2 py-1 text-lg font-medium transition-colors relative ${
-                    viewMode === 'list'
-                      ? 'text-[#5046E4]'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+              {/* View Switcher - Pill Button Design */}
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`flex items-center space-x-2 px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+                      viewMode === 'list'
+                        ? 'bg-[#5046E4] text-white shadow-lg'
+                        : 'bg-white text-[#5046E4] border-2 border-[#5046E4] hover:bg-[#5046E4] hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span>List View</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('calendar')}
+                    className={`flex items-center space-x-2 px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+                      viewMode === 'calendar'
+                        ? 'bg-[#5046E4] text-white shadow-lg'
+                        : 'bg-white text-[#5046E4] border-2 border-[#5046E4] hover:bg-[#5046E4] hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Calendar View</span>
+                  </button>
+                </div>
+                
+                <button 
+                  onClick={() => document.querySelector('input[placeholder="Enter your reminder..."]').focus()}
+                  className="flex items-center space-x-2 bg-[#5046E4] text-white px-6 py-3 rounded-full font-medium hover:bg-[#4338CA] transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
-                  <span>List View</span>
-                  {viewMode === 'list' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5046E4]"></div>
-                  )}
-                </button>
-                <button
-                  onClick={() => setViewMode('calendar')}
-                  className={`flex items-center space-x-3 px-2 py-1 text-lg font-medium transition-colors relative ${
-                    viewMode === 'calendar'
-                      ? 'text-[#5046E4]'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <span>Calendar View</span>
-                  {viewMode === 'calendar' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5046E4]"></div>
-                  )}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span>New Reminder</span>
                 </button>
               </div>
-              
-              <button 
-                onClick={() => document.querySelector('input[placeholder="Enter your reminder..."]')?.focus()}
-                className="flex items-center space-x-2 bg-[#5046E4] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#4338CA] transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span>New Reminder</span>
-              </button>
               
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Your Reminders</h1>
